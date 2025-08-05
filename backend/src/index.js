@@ -4,11 +4,18 @@ export default {
   async fetch(request, env) {
     try {
       const sql = postgres(env.DATABASE_URL, { ssl: 'require' });
-      const result = await sql`SELECT NOW()`;
+
+      // Query to get table names
+      const tables = await sql`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema='public';
+      `;
+
       await sql.end();
 
       return new Response(
-        `Hello from Zeno Backend 🚀\nDB Time: ${result[0].now}`,
+        `Tables in DB: ${tables.map(t => t.table_name).join(', ')}`,
         { headers: { "content-type": "text/plain" } }
       );
     } catch (err) {
