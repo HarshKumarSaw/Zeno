@@ -1,6 +1,6 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
-// Simplified time range using timezone offset directly
+// ✅ Step 1: Simplified IST-based UTC time range
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -37,8 +37,8 @@ export async function onRequestGet(context) {
     });
 
     if (!eventsRes.ok) {
-      const errText = await eventsRes.text();
-      throw new Error(`Google Calendar API error: ${errText}`);
+      const errorText = await eventsRes.text();
+      throw new Error(`Google Calendar API error: ${errorText}`);
     }
 
     const data = await eventsRes.json();
@@ -47,6 +47,10 @@ export async function onRequestGet(context) {
       const isAllDay = !!ev.start.date;
       const start = isAllDay ? ev.start.date : ev.start.dateTime;
       const end = isAllDay ? ev.end.date : ev.end.dateTime;
+
+      const durationDays = isAllDay
+        ? (new Date(ev.end.date) - new Date(ev.start.date)) / (1000 * 60 * 60 * 24)
+        : null;
 
       return {
         id: ev.id,
@@ -61,7 +65,8 @@ export async function onRequestGet(context) {
         location: ev.location || null,
         timeZone: isAllDay ? null : ev.start.timeZone || data.timeZone || null,
         endExclusive: isAllDay ? ev.end.date : undefined,
-        attendees: (ev.attendees || []).map(a => a.email)
+        attendees: (ev.attendees || []).map(a => a.email),
+        durationDays // ✅ Added in this step!
       };
     });
 
