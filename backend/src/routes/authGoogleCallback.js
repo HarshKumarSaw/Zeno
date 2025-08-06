@@ -67,6 +67,11 @@ export async function onRequestGet(context) {
       userId = userResult[0].id;
     }
 
+    // 🧹 Step 1: Delete any existing sessions for this user
+    await sql`
+      DELETE FROM sessions WHERE user_id = ${userId}
+    `;
+
     // 🧾 5. Insert session using real user ID
     await sql`
       INSERT INTO sessions (
