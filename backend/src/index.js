@@ -1,6 +1,6 @@
 import * as authGoogle from './routes/authGoogle.js';
 import * as authGoogleCallback from './routes/authGoogleCallback.js';
-import * as events from './routes/timelineEvents.js'; // ✅ Added
+import * as timelineEvents from './routes/timelineEvents.js'; // ✅ Added
 import { getValidAccessToken } from './utils/refreshGoogleToken.js';
 
 export default {
