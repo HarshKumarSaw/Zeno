@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
     code,
     client_id: context.env.GOOGLE_CLIENT_ID,
     client_secret: context.env.GOOGLE_CLIENT_SECRET,
-    redirect_uri: "https://zeno-backend.harshsaw01.workers.dev/api/auth/google/callback",
+    redirect_uri: "https://zeno-backend.harshsaw01.workers.dev/api/auth/google/callback",  // ✅ Fixed
     grant_type: "authorization_code",
   });
 
@@ -21,18 +21,19 @@ export async function onRequestGet(context) {
 
   const tokenData = await tokenResponse.json();
   if (!tokenData.access_token) {
-    return new Response(JSON.stringify(tokenData), { status: 400 });
+    // Optional: Redirect to frontend with error
+    return Response.redirect("https://zeno-frontend-ten.vercel.app/?auth=fail", 302);
   }
 
-  // Example: link token to a session (you can replace `1` with your user/session logic)
   const { access_token, refresh_token, expires_in } = tokenData;
   const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString();
 
-  // Store in Neon
+  // Store in Neon (replace 1 with a real user/session id in real apps)
   await context.env.DB.prepare(
     `INSERT INTO sessions(user_id, google_access_token, google_refresh_token, google_token_expires, created_at) 
      VALUES(?, ?, ?, ?, NOW())`
   ).bind(1, access_token, refresh_token, expiresAt).run();
 
-  return new Response("Google auth successful! You can close this tab.", { status: 200 });
+  // ✅ Redirect user back to frontend with success
+  return Response.redirect("https://zeno-frontend-ten.vercel.app/?auth=success", 302);
 }
