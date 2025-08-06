@@ -1,6 +1,6 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
-// ✅ Step 1: Simplified IST-based UTC time range
+// Returns UTC ISO strings for full IST day
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -66,7 +66,8 @@ export async function onRequestGet(context) {
         timeZone: isAllDay ? null : ev.start.timeZone || data.timeZone || null,
         endExclusive: isAllDay ? ev.end.date : undefined,
         attendees: (ev.attendees || []).map(a => a.email),
-        durationDays // ✅ Added in this step!
+        durationDays,
+        pinnedTop: isAllDay // ✅ new: lets the frontend "pin" all-day events
       };
     });
 
