@@ -1,15 +1,12 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
-// 🔧 Local function to compute the UTC time window of the full IST calendar day
+// 🔧 Compute correct UTC window for the given day in IST
 function getISTDayRange(dateStr) {
-  // IST = UTC+5:30 → offset in milliseconds
-  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // India Standard Time (UTC+5:30)
 
-  // Create Date in IST by forcing offset
   const istStart = new Date(`${dateStr}T00:00:00+05:30`);
   const istEnd = new Date(`${dateStr}T23:59:59.999+05:30`);
 
-  // Convert to UTC by subtracting the IST offset
   const utcStart = new Date(istStart.getTime() - IST_OFFSET_MS).toISOString();
   const utcEnd = new Date(istEnd.getTime() - IST_OFFSET_MS).toISOString();
 
@@ -29,17 +26,17 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // 1️⃣ Get valid token
+    // 1️⃣ Get a valid Google access token for this user
     const token = await getValidAccessToken(context, userId);
 
-    // 2️⃣ Get timeMin and timeMax based on IST calendar day
+    // 2️⃣ Compute UTC window for the full IST calendar day
     const { timeMin, timeMax } = getISTDayRange(date);
 
-    // 3️⃣ Build Google Calendar API URL
+    // 3️⃣ Build the request to Google Calendar API
     const apiUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
     apiUrl.searchParams.set("timeMin", timeMin);
     apiUrl.searchParams.set("timeMax", timeMax);
-    apiUrl.searchParams.set("singleEvents", "true");
+    apiUrl.searchParams.set("singleEvents", "true"); // ensures recurrence instances are expanded
     apiUrl.searchParams.set("orderBy", "startTime");
 
     const eventsRes = await fetch(apiUrl.toString(), {
@@ -50,18 +47,19 @@ export async function onRequestGet(context) {
     });
 
     if (!eventsRes.ok) {
-      const errorText = await eventsRes.text();
-      throw new Error(`Google Calendar API Error: ${errorText}`);
+      const errText = await eventsRes.text();
+      throw new Error(`Google Calendar API error: ${errText}`);
     }
 
     const data = await eventsRes.json();
 
-    // 4️⃣ Normalize events
+    // 4️⃣ Normalize each event for frontend
     const events = (data.items || []).map(ev => {
       const isAllDay = !!ev.start.date;
 
       return {
         id: ev.id,
+        recurringEventId: ev.recurringEventId || null,
         title: ev.summary || "Untitled Event",
         start: isAllDay ? ev.start.date : ev.start.dateTime,
         end: isAllDay ? ev.end.date : ev.end.dateTime,
@@ -71,7 +69,9 @@ export async function onRequestGet(context) {
         attendees: (ev.attendees || []).map(a => a.email),
         timeZone: isAllDay
           ? null
-          : ev.start.timeZone || data.timeZone || null
+          : ev.start.timeZone || data.timeZone || null,
+        // Optional: you can expose recurrence rule too, if needed on frontend
+        // recurrence: ev.recurrence || null
       };
     });
 
