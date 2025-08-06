@@ -1,5 +1,3 @@
-// src/routes/events.js
-
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
 export async function onRequestGet(context) {
@@ -15,44 +13,56 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // Step 1: Get valid access token for this user
+    // 1️⃣ Get valid Google access token for this user
     const token = await getValidAccessToken(context, userId);
 
-    // Step 2: Compute UTC start/end time of the given day
-    const dayStart = new Date(`${date}T00:00:00.000Z`).toISOString();
-    const dayEnd = new Date(`${date}T23:59:59.999Z`).toISOString();
+    // 2️⃣ Compute the UTC range for that day
+    const startOfDay = new Date(`${date}T00:00:00.000Z`).toISOString();
+    const endOfDay = new Date(`${date}T23:59:59.999Z`).toISOString();
 
-    // Step 3: Build Google Calendar API request
-    const apiUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
-    apiUrl.searchParams.set("timeMin", dayStart);
-    apiUrl.searchParams.set("timeMax", dayEnd);
-    apiUrl.searchParams.set("singleEvents", "true");
-    apiUrl.searchParams.set("orderBy", "startTime");
+    // 3️⃣ Fetch events from Google Calendar
+    const apiURL = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+    apiURL.searchParams.set("timeMin", startOfDay);
+    apiURL.searchParams.set("timeMax", endOfDay);
+    apiURL.searchParams.set("singleEvents", "true");
+    apiURL.searchParams.set("orderBy", "startTime");
 
-    const eventsRes = await fetch(apiUrl.toString(), {
+    const response = await fetch(apiURL.toString(), {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       }
     });
 
-    if (!eventsRes.ok) {
-      const errText = await eventsRes.text();
-      throw new Error(`Google Calendar API error: ${errText}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Google Calendar API Error: ${errText}`);
     }
 
-    const apiData = await eventsRes.json();
+    const data = await response.json();
 
-    // Step 4: Normalize the response for frontend use
-    const events = (apiData.items || []).map(ev => ({
-      id: ev.id,
-      title: ev.summary || "Untitled Event",
-      start: ev.start.dateTime || ev.start.date, // Handles all-day
-      end: ev.end.dateTime || ev.end.date,       // Handles all-day
-      colorId: ev.colorId || null,
-      allDay: !!ev.start.date, // If only `date` exists → all-day
-      location: ev.location || null,
-      attendees: (ev.attendees || []).map(person => person.email)
-    }));
+    // 4️⃣ Normalize each event
+    const events = (data.items || []).map(ev => {
+      const isAllDay = !!ev.start.date;
+
+      return {
+        id: ev.id,
+        title: ev.summary || "Untitled Event",
+
+        start: isAllDay ? ev.start.date : ev.start.dateTime,
+        end: isAllDay ? ev.end.date : ev.end.dateTime,
+
+        allDay: isAllDay,
+        colorId: ev.colorId || null,
+        location: ev.location || null,
+        attendees: (ev.attendees || []).map(a => a.email),
+
+        // Optional: include time zone info for frontend
+        timeZone: isAllDay
+          ? null
+          : ev.start.timeZone || data.timeZone || null
+      };
+    });
 
     return new Response(JSON.stringify(events), {
       status: 200,
