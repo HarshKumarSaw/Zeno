@@ -1,6 +1,6 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
-// 🔧 Compute correct UTC window for the given day in IST
+// Simplified time range using timezone offset directly
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -10,7 +10,7 @@ function getISTDayRange(dateStr) {
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const userId = url.searchParams.get("user");
-  const date = url.searchParams.get("date"); // Format: YYYY-MM-DD
+  const date = url.searchParams.get("date");
 
   if (!userId || !date) {
     return new Response(JSON.stringify({ error: "Missing user or date param" }), {
@@ -20,17 +20,13 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // 1️⃣ Get a valid Google access token for this user
     const token = await getValidAccessToken(context, userId);
-
-    // 2️⃣ Compute UTC window for the full IST calendar day
     const { timeMin, timeMax } = getISTDayRange(date);
 
-    // 3️⃣ Build the request to Google Calendar API
     const apiUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
     apiUrl.searchParams.set("timeMin", timeMin);
     apiUrl.searchParams.set("timeMax", timeMax);
-    apiUrl.searchParams.set("singleEvents", "true"); // ensures recurrence instances are expanded
+    apiUrl.searchParams.set("singleEvents", "true");
     apiUrl.searchParams.set("orderBy", "startTime");
 
     const eventsRes = await fetch(apiUrl.toString(), {
@@ -47,25 +43,25 @@ export async function onRequestGet(context) {
 
     const data = await eventsRes.json();
 
-    // 4️⃣ Normalize each event for frontend
     const events = (data.items || []).map(ev => {
       const isAllDay = !!ev.start.date;
+      const start = isAllDay ? ev.start.date : ev.start.dateTime;
+      const end = isAllDay ? ev.end.date : ev.end.dateTime;
 
       return {
         id: ev.id,
         recurringEventId: ev.recurringEventId || null,
         title: ev.summary || "Untitled Event",
-        start: isAllDay ? ev.start.date : ev.start.dateTime,
-        end: isAllDay ? ev.end.date : ev.end.dateTime,
+        start,
+        end,
+        startUtc: isAllDay ? null : new Date(ev.start.dateTime).toISOString(),
+        endUtc: isAllDay ? null : new Date(ev.end.dateTime).toISOString(),
         allDay: isAllDay,
         colorId: ev.colorId || null,
         location: ev.location || null,
-        attendees: (ev.attendees || []).map(a => a.email),
-        timeZone: isAllDay
-          ? null
-          : ev.start.timeZone || data.timeZone || null,
-        // Optional: you can expose recurrence rule too, if needed on frontend
-        // recurrence: ev.recurrence || null
+        timeZone: isAllDay ? null : ev.start.timeZone || data.timeZone || null,
+        endExclusive: isAllDay ? ev.end.date : undefined,
+        attendees: (ev.attendees || []).map(a => a.email)
       };
     });
 
