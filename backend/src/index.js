@@ -1,6 +1,6 @@
 import * as authGoogle from './routes/authGoogle.js';
 import * as authGoogleCallback from './routes/authGoogleCallback.js';
-import * as timelineEvents from './routes/timelineEvents.js'; // ✅ Added
+import * as timelineEvents from './routes/timelineEvents.js'; // ✅ Timeline API
 import { getValidAccessToken } from './utils/refreshGoogleToken.js';
 
 export default {
@@ -17,35 +17,9 @@ export default {
       return authGoogleCallback.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
     }
 
-    // ✅ Event fetch endpoint
+    // ✅ Timeline event fetch endpoint
     if (path === '/api/timelineEvents') {
       return timelineEvents.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
-    }
-
-    // ✅ Optional: Token testing route (you mentioned deleting later)
-    if (path === '/api/testToken') {
-      const userId = url.searchParams.get('user');
-
-      if (!userId) {
-        return new Response(JSON.stringify({ error: 'Missing user query param' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      try {
-        const token = await getValidAccessToken({ env }, userId);
-        return new Response(JSON.stringify({ token }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } catch (err) {
-        console.error('Token refresh failed:', err);
-        return new Response(JSON.stringify({ error: 'Failed to get access token' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
     }
 
     // ❌ Fallback handler for unmatched routes
