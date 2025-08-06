@@ -1,5 +1,6 @@
 import * as authGoogle from './routes/authGoogle.js';
 import * as authGoogleCallback from './routes/authGoogleCallback.js';
+import * as events from './routes/events.js'; // ✅ Added
 import { getValidAccessToken } from './utils/refreshGoogleToken.js';
 
 export default {
@@ -7,6 +8,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // ✅ Google OAuth endpoints
     if (path === '/api/auth/google') {
       return authGoogle.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
     }
@@ -15,6 +17,12 @@ export default {
       return authGoogleCallback.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
     }
 
+    // ✅ Event fetch endpoint
+    if (path === '/api/events') {
+      return events.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
+    }
+
+    // ✅ Optional: Token testing route (you mentioned deleting later)
     if (path === '/api/testToken') {
       const userId = url.searchParams.get('user');
 
@@ -40,6 +48,7 @@ export default {
       }
     }
 
+    // ❌ Fallback handler for unmatched routes
     return new Response('Not Found', { status: 404 });
   }
 };
