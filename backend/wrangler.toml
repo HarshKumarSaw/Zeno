@@ -5,6 +5,3 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # environment variables will go here later
-
-[observability.logs]
-enabled = false
