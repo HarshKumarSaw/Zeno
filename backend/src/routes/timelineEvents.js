@@ -2,15 +2,9 @@ import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
 
 // 🔧 Compute correct UTC window for the given day in IST
 function getISTDayRange(dateStr) {
-  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // India Standard Time (UTC+5:30)
-
-  const istStart = new Date(`${dateStr}T00:00:00+05:30`);
-  const istEnd = new Date(`${dateStr}T23:59:59.999+05:30`);
-
-  const utcStart = new Date(istStart.getTime() - IST_OFFSET_MS).toISOString();
-  const utcEnd = new Date(istEnd.getTime() - IST_OFFSET_MS).toISOString();
-
-  return { timeMin: utcStart, timeMax: utcEnd };
+  const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
+  const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
+  return { timeMin, timeMax };
 }
 
 export async function onRequestGet(context) {
