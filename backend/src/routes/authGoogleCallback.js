@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
     code,
     client_id: context.env.GOOGLE_CLIENT_ID,
     client_secret: context.env.GOOGLE_CLIENT_SECRET,
-    redirect_uri: "https://zeno-frontend-ten.vercel.app/api/auth/google/callback",
+    redirect_uri: "https://zeno-backend.harshsaw01.workers.dev/api/auth/google/callback",
     grant_type: "authorization_code",
   });
 
