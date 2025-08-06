@@ -1,6 +1,6 @@
 import * as authGoogle from './routes/authGoogle.js';
 import * as authGoogleCallback from './routes/authGoogleCallback.js';
-import * as events from './routes/events.js'; // ✅ Added
+import * as events from './routes/timelineEvents.js'; // ✅ Added
 import { getValidAccessToken } from './utils/refreshGoogleToken.js';
 
 export default {
@@ -18,8 +18,8 @@ export default {
     }
 
     // ✅ Event fetch endpoint
-    if (path === '/api/events') {
-      return events.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
+    if (path === '/api/timelineEvents') {
+      return timelineEvents.onRequestGet({ request, env, waitUntil: ctx.waitUntil });
     }
 
     // ✅ Optional: Token testing route (you mentioned deleting later)
