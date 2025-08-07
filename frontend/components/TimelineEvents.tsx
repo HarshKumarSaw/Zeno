@@ -1,3 +1,7 @@
+"use client";
+import React, { useEffect, useState } from 'react';
+// ...rest of the file...
+
 import React, { useEffect, useState } from 'react';
 import { TimelineEvent } from '../types/event';
 
