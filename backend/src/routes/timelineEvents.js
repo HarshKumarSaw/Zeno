@@ -28,7 +28,7 @@ export async function onRequestGet(context) {
     apiUrl.searchParams.set("timeMax", timeMax);
     apiUrl.searchParams.set("singleEvents", "true");
     apiUrl.searchParams.set("orderBy", "startTime");
-    // Limit Google API response to only needed fields for perf
+    // Limit returned fields for performance
     apiUrl.searchParams.set(
       "fields",
       "items(id,recurringEventId,summary,start,end,colorId,location,attendees,email),timeZone"
@@ -63,9 +63,9 @@ export async function onRequestGet(context) {
         title: ev.summary || "Untitled Event",
         start,
         end,
+        // Timed events can directly use start/end; all-day events now get ISO versions too
         startUtc: isAllDay ? null : new Date(ev.start.dateTime).toISOString(),
         endUtc: isAllDay ? null : new Date(ev.end.dateTime).toISOString(),
-        // For all-day events, also provide ISO strings for frontend date math
         startIso: isAllDay ? new Date(ev.start.date).toISOString() : null,
         endIso: isAllDay ? new Date(ev.end.date).toISOString() : null,
         allDay: isAllDay,
@@ -85,7 +85,7 @@ export async function onRequestGet(context) {
     });
 
   } catch (err) {
-    // Improved error logging for debugging
+    // Improved log with context
     console.error("Fetch events error", { userId, date, err });
     return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
