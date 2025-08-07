@@ -28,6 +28,11 @@ export async function onRequestGet(context) {
     apiUrl.searchParams.set("timeMax", timeMax);
     apiUrl.searchParams.set("singleEvents", "true");
     apiUrl.searchParams.set("orderBy", "startTime");
+    // Limit Google API response to only needed fields for perf
+    apiUrl.searchParams.set(
+      "fields",
+      "items(id,recurringEventId,summary,start,end,colorId,location,attendees,email),timeZone"
+    );
 
     const eventsRes = await fetch(apiUrl.toString(), {
       headers: {
@@ -60,14 +65,17 @@ export async function onRequestGet(context) {
         end,
         startUtc: isAllDay ? null : new Date(ev.start.dateTime).toISOString(),
         endUtc: isAllDay ? null : new Date(ev.end.dateTime).toISOString(),
+        // For all-day events, also provide ISO strings for frontend date math
+        startIso: isAllDay ? new Date(ev.start.date).toISOString() : null,
+        endIso: isAllDay ? new Date(ev.end.date).toISOString() : null,
         allDay: isAllDay,
         colorId: ev.colorId || null,
         location: ev.location || null,
-        timeZone: isAllDay ? null : ev.start.timeZone || data.timeZone || null,
+        timeZone: isAllDay ? null : (ev.start.timeZone || data.timeZone || null),
         endExclusive: isAllDay ? ev.end.date : undefined,
         attendees: (ev.attendees || []).map(a => a.email),
         durationDays,
-        pinnedTop: isAllDay // ✅ new: lets the frontend "pin" all-day events
+        pinnedTop: isAllDay
       };
     });
 
@@ -77,7 +85,8 @@ export async function onRequestGet(context) {
     });
 
   } catch (err) {
-    console.error("Fetch events error:", err);
+    // Improved error logging for debugging
+    console.error("Fetch events error", { userId, date, err });
     return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
