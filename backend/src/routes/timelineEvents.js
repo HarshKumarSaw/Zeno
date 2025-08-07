@@ -28,7 +28,6 @@ export async function onRequestGet(context) {
     apiUrl.searchParams.set("timeMax", timeMax);
     apiUrl.searchParams.set("singleEvents", "true");
     apiUrl.searchParams.set("orderBy", "startTime");
-    // ✅ Only use safe fields—NO "email" at the root!
     apiUrl.searchParams.set(
       "fields",
       "items(id,recurringEventId,summary,start,end,colorId,location,attendees,recurrence),timeZone"
@@ -57,6 +56,11 @@ export async function onRequestGet(context) {
         ? (new Date(ev.end.date) - new Date(ev.start.date)) / (1000 * 60 * 60 * 24)
         : null;
 
+      // ✅ NEW: Duration in hours for timed events
+      const durationHours = !isAllDay
+        ? (new Date(end) - new Date(start)) / (1000 * 60 * 60)
+        : null;
+
       return {
         id: ev.id,
         recurringEventId: ev.recurringEventId || null,
@@ -74,6 +78,7 @@ export async function onRequestGet(context) {
         endExclusive: isAllDay ? ev.end.date : undefined,
         attendees: (ev.attendees || []).map(a => a.email),
         durationDays,
+        durationHours, // ✅ Now included for timed events!
         pinnedTop: isAllDay
       };
     });
@@ -84,7 +89,6 @@ export async function onRequestGet(context) {
     });
 
   } catch (err) {
-    // Improved error logging with context for debugging
     console.error("Fetch events error", { userId, date, err });
     return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
