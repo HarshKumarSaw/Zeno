@@ -1,5 +1,3 @@
-// /components/TimelineEvents.tsx
-
 import React, { useEffect, useState } from 'react';
 import { TimelineEvent } from '../types/event';
 
