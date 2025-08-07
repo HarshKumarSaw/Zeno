@@ -1,4 +1,10 @@
 // /components/Timeline.tsx
+
+"use client";
+import React from 'react';
+import TimelineEvents from './TimelineEvents';
+// ...rest of the file...
+
 import React from 'react';
 import TimelineEvents from './TimelineEvents';
 
