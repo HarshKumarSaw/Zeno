@@ -1,6 +1,6 @@
 // /components/Timeline.tsx
 import React from 'react';
-import TimelineEvents from './TimelineEvents';
+import TimelineEvents from './TimelinEvents';
 
 const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 
