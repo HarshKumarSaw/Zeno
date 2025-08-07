@@ -1,5 +1,6 @@
 // /components/Timeline.tsx
 import React from 'react';
+import TimelineEvents from './TimelineEvents';
 
 const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 
@@ -22,6 +23,8 @@ export default function Timeline() {
             <div className="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700" />
           </div>
         ))}
+        {/* EVENTS GO HERE */}
+        <TimelineEvents />
       </div>
     </div>
   );
