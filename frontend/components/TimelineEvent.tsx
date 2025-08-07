@@ -55,6 +55,8 @@ export default function TimelineEvents() {
           durationDays: e.durationDays,
         }));
 
+        console.log("TIMELINE EVENTS:", processed);
+
         setEvents(processed);
       } catch (err) {
         console.error('Error fetching timeline events:', err);
