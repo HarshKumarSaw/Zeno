@@ -28,6 +28,11 @@ export async function onRequestGet(context) {
     apiUrl.searchParams.set("timeMax", timeMax);
     apiUrl.searchParams.set("singleEvents", "true");
     apiUrl.searchParams.set("orderBy", "startTime");
+    // ✅ Only use safe fields—NO "email" at the root!
+    apiUrl.searchParams.set(
+      "fields",
+      "items(id,recurringEventId,summary,start,end,colorId,location,attendees,recurrence),timeZone"
+    );
 
     const eventsRes = await fetch(apiUrl.toString(), {
       headers: {
@@ -60,6 +65,8 @@ export async function onRequestGet(context) {
         end,
         startUtc: isAllDay ? null : new Date(ev.start.dateTime).toISOString(),
         endUtc: isAllDay ? null : new Date(ev.end.dateTime).toISOString(),
+        startIso: isAllDay ? new Date(ev.start.date).toISOString() : null,
+        endIso: isAllDay ? new Date(ev.end.date).toISOString() : null,
         allDay: isAllDay,
         colorId: ev.colorId || null,
         location: ev.location || null,
@@ -67,7 +74,7 @@ export async function onRequestGet(context) {
         endExclusive: isAllDay ? ev.end.date : undefined,
         attendees: (ev.attendees || []).map(a => a.email),
         durationDays,
-        pinnedTop: isAllDay // ✅ new: lets the frontend "pin" all-day events
+        pinnedTop: isAllDay
       };
     });
 
@@ -77,7 +84,8 @@ export async function onRequestGet(context) {
     });
 
   } catch (err) {
-    console.error("Fetch events error:", err);
+    // Improved error logging with context for debugging
+    console.error("Fetch events error", { userId, date, err });
     return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
