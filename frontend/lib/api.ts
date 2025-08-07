@@ -1,5 +1,10 @@
 // /lib/api.ts
-export async function fetchTimelineEvents(userId: string, date: string) {
+import { TimelineEvent } from '../types/event';
+
+export async function fetchTimelineEvents(
+  userId: string,
+  date: string
+): Promise<TimelineEvent[]> {
   const url = new URL('https://zeno-backend.harshsaw01.workers.dev/api/timelineEvents');
   url.searchParams.set('user', userId);
   url.searchParams.set('date', date);
@@ -10,5 +15,6 @@ export async function fetchTimelineEvents(userId: string, date: string) {
     throw new Error('Failed to fetch events');
   }
 
-  return res.json();
+  const data: TimelineEvent[] = await res.json();
+  return data;
 }
