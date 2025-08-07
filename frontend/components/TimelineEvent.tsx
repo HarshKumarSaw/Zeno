@@ -35,7 +35,9 @@ export default function TimelineEvents() {
         );
         const data = await res.json();
 
-        const processed: TimelineEvent[] = data.events.map((e: any) => ({
+        // Try both {events: []} and [] response styles
+        const rawEvents = Array.isArray(data) ? data : data.events;
+        const processed: TimelineEvent[] = (rawEvents || []).map((e: any) => ({
           id: e.id,
           title: e.title,
           start: e.start,
@@ -55,11 +57,9 @@ export default function TimelineEvents() {
           durationDays: e.durationDays,
         }));
 
-        console.log("TIMELINE EVENTS:", processed);
-
         setEvents(processed);
       } catch (err) {
-        console.error('Error fetching timeline events:', err);
+        setEvents([]);
       }
     };
 
@@ -67,83 +67,104 @@ export default function TimelineEvents() {
   }, []);
 
   return (
-    <div className="relative h-[2304px]">
-      {/* 24 Hour Timeline Grid */}
-      {Array.from({ length: 24 }).map((_, hour) => (
-        <div key={hour} className="h-24 border-t border-gray-300 relative">
-          <span className="absolute -left-12 text-xs text-gray-500">
-            {`${hour.toString().padStart(2, '0')}:00`}
-          </span>
-        </div>
-      ))}
+    <div>
+      {/* DEBUG output: events array */}
+      <pre style={{
+        fontSize: 10,
+        background: "#eef",
+        color: "#222",
+        padding: 6,
+        maxHeight: 100,
+        overflow: "auto"
+      }}>
+        {JSON.stringify(events, null, 2)}
+      </pre>
+      <div className="relative h-[2304px]">
+        {/* 24 Hour Timeline Grid */}
+        {Array.from({ length: 24 }).map((_, hour) => (
+          <div key={hour} className="h-24 border-t border-gray-300 relative">
+            <span className="absolute -left-12 text-xs text-gray-500">
+              {`${hour.toString().padStart(2, '0')}:00`}
+            </span>
+          </div>
+        ))}
 
-      {/* Render Events */}
-      {events.map((event) => {
-        const {
-          id,
-          title,
-          start,
-          end,
-          allDay,
-          color,
-          location,
-          description,
-          durationHours,
-          recurringEventId,
-          pinnedTop,
-        } = event;
+        {/* Render Events */}
+        {events.map((event) => {
+          const {
+            id,
+            title,
+            start,
+            end,
+            allDay,
+            color,
+            location,
+            description,
+            durationHours,
+            recurringEventId,
+            pinnedTop,
+          } = event;
 
-        if (allDay) {
-          // All-day event — shown pinned at top
+          if (allDay) {
+            // All-day event — show at the top
+            return (
+              <div
+                key={id}
+                className="absolute top-0 left-16 right-4 h-8 border border-dashed bg-white px-3 py-1 rounded text-xs text-gray-700 flex items-center gap-1"
+              >
+                <strong>{title}</strong>
+                {location && <span className="text-[0.65rem]">📍 {location}</span>}
+                {recurringEventId && <span title="Recurring event">🔁</span>}
+              </div>
+            );
+          }
+
+          // Timed event
+          const startDate = new Date(start);
+          const endDate = new Date(end);
+          const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+          const durationMinutes = (endDate.getTime() - startDate.getTime()) / 60000;
+          const top = startHour * 96;
+          const height = (durationMinutes / 60) * 96;
+
           return (
             <div
               key={id}
-              className="absolute top-0 left-16 right-4 h-8 border border-dashed bg-white px-3 py-1 rounded text-xs text-gray-700 flex items-center gap-1"
+              className="absolute left-16 right-4 rounded-md px-3 py-2 text-xs text-white shadow-md overflow-hidden"
+              style={{
+                top: `${top}px`,
+                height: `${height}px`,
+                backgroundColor: color,
+                zIndex: pinnedTop ? 50 : 1,
+              }}
             >
-              <strong>{title}</strong>
-              {location && <span className="text-[0.65rem]">📍 {location}</span>}
-              {recurringEventId && <span title="Recurring event">🔁</span>}
+              <div className="flex justify-between items-center">
+                <strong className="block text-sm font-semibold">
+                  {title}
+                  {recurringEventId && <span title="Recurring event"> 🔁</span>}
+                </strong>
+                {durationHours && durationHours > 24 && (
+                  <span
+                    className="text-[0.6rem] bg-white/30 px-1 rounded ml-2"
+                    title={`${Math.round(durationHours)}h`}
+                  >
+                    ⏳ Multi-day
+                  </span>
+                )}
+                {pinnedTop && <span className="text-yellow-300">📌</span>}
+              </div>
+
+              <div className="text-[0.7rem] mt-1">🕓 {formatTimeRange(start, end)}</div>
+              {location && <div className="text-[0.7rem] mt-0.5 truncate">📍 {location}</div>}
+              {description && (
+                <div className="mt-1 text-[0.65rem] line-clamp-2 opacity-90">
+                  {description}
+                </div>
+              )}
             </div>
           );
-        }
-
-        // Timed event
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-        const durationMinutes = (endDate.getTime() - startDate.getTime()) / 60000;
-        const top = startHour * 96;
-        const height = (durationMinutes / 60) * 96;
-
-        return (
-  <div>
-    {/* Debug box: shows fetched events as JSON */}
-    <pre style={{
-      fontSize: 10, 
-      background: "#eef", 
-      color: "#222", 
-      padding: 6, 
-      maxHeight: 100, 
-      overflow: "auto"
-    }}>
-      {JSON.stringify(events, null, 2)}
-    </pre>
-    {/* The timeline UI */}
-    <div className="relative h-[2304px]">
-      {/* 24 Hour Timeline Grid */}
-      {Array.from({ length: 24 }).map((_, hour) => (
-        <div key={hour} className="h-24 border-t border-gray-300 relative">
-          <span className="absolute -left-12 text-xs text-gray-500">
-            {`${hour.toString().padStart(2, '0')}:00`}
-          </span>
-        </div>
-      ))}
-
-      {/* Render Events */}
-      {events.map((event) => {
-        // (event box rendering logic stays the same)
-        // ...
-      })}
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+}
