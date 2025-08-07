@@ -1,3 +1,5 @@
+![Zeno Logo](assets/logo.png)
+
 # ⏳ Zeno – Your Serverless Time Management Assistant
 
 **Zeno** is a lightweight, chat-based time management assistant designed to be **fully automated, zero-maintenance, and serverless** by default.
