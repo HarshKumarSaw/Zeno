@@ -68,6 +68,13 @@ export default function TimelineEvents() {
 
   return (
     <div>
+      {/* Overly visible banner: remove when working */}
+      <div style={{
+        background: 'yellow', color: 'black', textAlign: 'center',
+        fontWeight: 'bold', padding: 12, fontSize: 16, marginBottom: 10
+      }}>
+        TIMELINE EVENTS COMPONENT RENDERED!
+      </div>
       {/* DEBUG output: events array */}
       <pre style={{
         fontSize: 10,
@@ -79,16 +86,7 @@ export default function TimelineEvents() {
       }}>
         {JSON.stringify(events, null, 2)}
       </pre>
-      <div className="relative h-[2304px]">
-        {/* 24 Hour Timeline Grid */}
-        {Array.from({ length: 24 }).map((_, hour) => (
-          <div key={hour} className="h-24 border-t border-gray-300 relative">
-            <span className="absolute -left-12 text-xs text-gray-500">
-              {`${hour.toString().padStart(2, '0')}:00`}
-            </span>
-          </div>
-        ))}
-
+      <div style={{position:"relative"}} className="relative h-[2304px]">
         {/* Render Events */}
         {events.map((event) => {
           const {
