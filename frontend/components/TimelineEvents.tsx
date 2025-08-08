@@ -1,59 +1,71 @@
-// /components/TimelineEvents.tsx
-
 import React from "react";
 import { TimelineEvent } from "../types/event";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
-// Helps choose colors based on colorId
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const COLOR_MAP: Record<string, string> = {
-  "1": "#EF4444", // Red
-  "2": "#F59E42", // Orange
-  "3": "#38BDF8", // Blue
-  "4": "#22C55E", // Green
+  "1": "#EF4444",
+  "2": "#F59E42",
+  "3": "#38BDF8",
+  "4": "#22C55E",
 };
 const DEFAULT_COLOR = "#6366F1";
+const HOUR_BLOCK_HEIGHT = 96;
+const TIMEZONE = "Asia/Kolkata";
 
 type TimelineEventProps = {
   event: TimelineEvent;
 };
 
-// Main event card component
 export default function TimelineEventComponent({ event }: TimelineEventProps) {
-  // Compute times/duration/placement
-  const startDate = new Date(event.start);
-  const endDate = new Date(event.end);
-  const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-  const durationMin = (endDate.getTime() - startDate.getTime()) / 60000;
-  const top = startHour * 96;
-  const height = (durationMin / 60) * 96;
-  const bgColor = event.colorId
-    ? COLOR_MAP[event.colorId] || DEFAULT_COLOR
-    : DEFAULT_COLOR;
+  // Always use UTC fields and convert to Asia/Kolkata for math and display!
+  const start = dayjs.tz(event.startUtc, TIMEZONE);
+  const end = dayjs.tz(event.endUtc, TIMEZONE);
 
-  // Start/end for display (HH:mm)
-  const displayStart = startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const displayEnd = endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  // Debug logging
+  console.log({
+    eventStartUtc: event.startUtc,
+    asIST: start.format("YYYY-MM-DD HH:mm"),
+    startHour: start.hour(),
+    duration: end.diff(start, "minute")
+  });
+
+  const startHour = start.hour() + start.minute() / 60;
+  const durationMin = end.diff(start, "minute");
+  const top = startHour * HOUR_BLOCK_HEIGHT;
+  const height = (durationMin / 60) * HOUR_BLOCK_HEIGHT;
+
+  const bgColor = (event.colorId && COLOR_MAP[event.colorId]) || DEFAULT_COLOR;
+  const displayStart = start.format("HH:mm");
+  const displayEnd = end.format("HH:mm");
 
   return (
-    <div
-      className="absolute left-16 right-4 rounded-md px-2 py-1 text-xs text-white overflow-hidden shadow-md"
+    <article
+      className="absolute left-16 right-4 rounded-lg p-2 bg-opacity-90 text-white shadow-md overflow-hidden flex flex-col gap-1 justify-center transition-all duration-200"
       style={{
         top: `${top}px`,
         height: `${height}px`,
         backgroundColor: bgColor,
-        zIndex: 2,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
+        zIndex: 10,
       }}
-      title={event.title}
+      aria-label={`${event.title}, from ${displayStart} to ${displayEnd}`}
+      title={`${event.title} (${displayStart} – ${displayEnd})`}
     >
-      <div style={{ fontWeight: 600, fontSize: 14 }}>{event.title}</div>
+      <header className="font-semibold text-sm leading-tight truncate">
+        {event.title}
+      </header>
       {!event.allDay && (
-        <div style={{ fontSize: 12, opacity: 0.85 }}>
+        <time className="text-xs text-white/85 leading-tight">
           {displayStart} – {displayEnd}
-        </div>
+        </time>
       )}
-      {/* Optional: other fields (like location or attendees) */}
-    </div>
+      {event.location && (
+        <p className="text-[11px] text-white/70 truncate">{event.location}</p>
+      )}
+    </article>
   );
 }
