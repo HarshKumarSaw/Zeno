@@ -1,6 +1,7 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
-import { withCorsHeaders } from "../utils/cors.js"; // Step 1: import CORS utility
+import { withCorsHeaders } from "../utils/cors.js"; // Centralized CORS
 
+// Returns UTC ISO strings for full IST day
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -15,7 +16,7 @@ export async function onRequestGet(context) {
   if (!userId || !date) {
     return withCorsHeaders(new Response(JSON.stringify({ error: "Missing user or date param" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     }));
   }
 
@@ -55,7 +56,6 @@ export async function onRequestGet(context) {
       const durationDays = isAllDay
         ? (new Date(ev.end.date) - new Date(ev.start.date)) / (1000 * 60 * 60 * 24)
         : null;
-
       const durationHours = !isAllDay
         ? (new Date(end) - new Date(start)) / (1000 * 60 * 60)
         : null;
@@ -82,18 +82,21 @@ export async function onRequestGet(context) {
       };
     });
 
-    // SUCCESS: wrap response in CORS
     return withCorsHeaders(new Response(JSON.stringify(events), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     }));
 
   } catch (err) {
     console.error("Fetch events error", { userId, date, err });
-    // ERROR: wrap response in CORS
     return withCorsHeaders(new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     }));
   }
+}
+
+// --- ADD THIS OPTIONS HANDLER FOR CORS PREFLIGHT ---
+export async function onRequestOptions(context) {
+  return withCorsHeaders(new Response(null, { status: 204 }));
 }
