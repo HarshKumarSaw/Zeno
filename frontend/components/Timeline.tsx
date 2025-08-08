@@ -71,7 +71,7 @@ export default function Timeline() {
           </div>
         )}
 
-        {/* Events rendering (without containerHeight) */}
+        {/* Events rendering (without containerHeight prop) */}
         {!loading &&
           !error &&
           events.map((event) => (
