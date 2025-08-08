@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import TimelineEventComponent from './TimelineEvent';
+import TimelineEventComponent from './TimelineEvents';
 import { TimelineEvent } from '../types/event';
 
 export default function Timeline() {
