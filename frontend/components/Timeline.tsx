@@ -2,51 +2,181 @@
 
 import React, { useEffect, useState } from "react";
 
+// Config
 const HOURS_IN_DAY = 24;
 const HOUR_BLOCK_HEIGHT = 96;
 
-// Event type
+// Event Type
 type Event = {
   id: string;
   title: string;
   isAllDay?: boolean;
-  startDate?: string;
-  endDate?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string;   // "HH:mm"
+  endTime?: string;     // "HH:mm"
+  startDate?: string;   // "YYYY-MM-DD"
+  endDate?: string;     // "YYYY-MM-DD"
   description?: string;
   color: string;
   type?: string;
   isMultiDay?: boolean;
 };
 
-// --- Sample data ---
-const sampleEvents: Event[] = [/* --- [keep your entire sampleEvents array as-is here!] --- */];
+// 🟦 Multifunctional, Diverse Event Samples 😎
+const sampleEvents: Event[] = [
+  // --- All-day events (single, multi-day) ---
+  {
+    id: "all-1",
+    title: "Holiday - Independence Day",
+    isAllDay: true,
+    startDate: "2025-08-15",
+    endDate: "2025-08-15",
+    color: "#ef4444",
+    type: "holiday"
+  },
+  {
+    id: "all-2",
+    title: "Intl. Hackathon",
+    isAllDay: true,
+    startDate: "2025-08-12",
+    endDate: "2025-08-16",
+    color: "#8b5cf6",
+    type: "conference"
+  },
 
-// Helper function for time parsing
-function parseTime(timeStr: string) {
+  // --- Regular event (non-overlapping) ---
+  {
+    id: "timed-1",
+    title: "Morning Standup",
+    startTime: "09:00",
+    endTime: "09:30",
+    description: "Daily team sync",
+    color: "#0ea5e9",
+    type: "meeting"
+  },
+
+  // --- Back-to-back helper events (test stacking) ---
+  {
+    id: "timed-2a",
+    title: "Product Review",
+    startTime: "09:30",
+    endTime: "10:00",
+    description: "Feedback session",
+    color: "#f59e42",
+    type: "meeting"
+  },
+  {
+    id: "timed-2b",
+    title: "One-on-One",
+    startTime: "10:00",
+    endTime: "10:30",
+    description: "Mentoring",
+    color: "#3b82f6",
+    type: "1-1"
+  },
+
+  // --- Overlapping events (same time, different length) ---
+  {
+    id: "overlap-a",
+    title: "Parallel Meeting A",
+    startTime: "11:00",
+    endTime: "12:00",
+    color: "#10b981",
+    type: "meeting"
+  },
+  {
+    id: "overlap-b",
+    title: "Parallel Meeting B",
+    startTime: "11:15",
+    endTime: "12:30",
+    color: "#f59e0b",
+    type: "meeting"
+  },
+
+  // --- Three events at same time (overlap) ---
+  {
+    id: "overlap-c1",
+    title: "Workshop A",
+    startTime: "14:00",
+    endTime: "15:00",
+    color: "#06b6d4",
+    type: "workshop"
+  },
+  {
+    id: "overlap-c2",
+    title: "Workshop B",
+    startTime: "14:00",
+    endTime: "15:00",
+    color: "#ec4899",
+    type: "workshop"
+  },
+  {
+    id: "overlap-c3",
+    title: "Optional Training",
+    startTime: "14:00",
+    endTime: "15:00",
+    color: "#84cc16",
+    type: "training"
+  },
+
+  // --- Very short (5 min) event ---
+  {
+    id: "short-1",
+    title: "Quick Sync",
+    startTime: "15:15",
+    endTime: "15:20",
+    color: "#f59e0b",
+    type: "meeting"
+  },
+
+  // --- Long session ---
+  {
+    id: "long-1",
+    title: "Deep Work Block",
+    startTime: "16:00",
+    endTime: "18:30",
+    color: "#10b981",
+    type: "work"
+  },
+
+  // --- Multi-day timed event (spans midnight) ---
+  {
+    id: "multi-1",
+    title: "Server Maintenance",
+    startTime: "23:00",
+    endTime: "02:00", // Next day
+    startDate: "2025-08-11",
+    endDate: "2025-08-12",
+    isMultiDay: true,
+    color: "#ef4444",
+    type: "maintenance"
+  }
+];
+
+// Helper for time parsing "HH:mm" → decimal hours
+function parseTime(timeStr?: string): number {
   if (!timeStr) return 0;
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return hours + minutes / 60;
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return hours + (minutes / 60);
 }
 
-// Overlap grouping
+// Group overlapping events function
 function groupOverlappingEvents(events: Event[]) {
   const timedEvents = events.filter(e => !e.isAllDay);
   const groups: Event[][] = [];
   const processed = new Set<string>();
+
   timedEvents.forEach(event => {
     if (processed.has(event.id)) return;
+
     const group = [event];
     processed.add(event.id);
-    // Find all overlapping events
+    const eventStart = parseTime(event.startTime);
+    const eventEnd = parseTime(event.endTime);
+
     timedEvents.forEach(otherEvent => {
       if (processed.has(otherEvent.id)) return;
-      const eventStart = parseTime(event.startTime || "");
-      const eventEnd = parseTime(event.endTime || "");
-      const otherStart = parseTime(otherEvent.startTime || "");
-      const otherEnd = parseTime(otherEvent.endTime || "");
-      // Check for overlap
+      const otherStart = parseTime(otherEvent.startTime);
+      const otherEnd = parseTime(otherEvent.endTime);
       if (eventStart < otherEnd && otherStart < eventEnd) {
         group.push(otherEvent);
         processed.add(otherEvent.id);
@@ -57,31 +187,24 @@ function groupOverlappingEvents(events: Event[]) {
   return groups;
 }
 
-// All-day events
-function AllDayEventsSection({ events, onEventClick }: {
-  events: Event[];
-  onEventClick: (e: Event) => void;
-}) {
+// All-day events header renderer
+function AllDayEventsSection({ events, onEventClick }: { events: Event[], onEventClick: (e: Event) => void }) {
   const allDayEvents = events.filter(e => e.isAllDay);
-  if (allDayEvents.length === 0) return null;
+  if (!allDayEvents.length) return null;
   return (
     <div className="border-b border-gray-700 bg-gray-800 bg-opacity-50">
       <div className="px-4 py-2 text-xs text-gray-400 font-medium">All Day</div>
       <div className="px-4 pb-3 space-y-1">
-        {allDayEvents.map((event, index) => (
+        {allDayEvents.map(event => (
           <div
             key={event.id}
+            onClick={() => onEventClick(event)}
             className="rounded-md p-2 cursor-pointer hover:opacity-80 transition-opacity text-xs font-medium"
             style={{ backgroundColor: event.color, color: "white" }}
-            onClick={() => onEventClick(event)}
           >
-            <div className="truncate" title={event.title}>
-              {event.title}
-            </div>
+            <span className="truncate" title={event.title}>{event.title}</span>
             {event.startDate !== event.endDate && (
-              <div className="text-xs opacity-75 mt-1">
-                Multi-day event
-              </div>
+              <div className="text-xs opacity-75 mt-1">Multi-day event</div>
             )}
           </div>
         ))}
@@ -90,7 +213,7 @@ function AllDayEventsSection({ events, onEventClick }: {
   );
 }
 
-// Timeline event component (with overlap handling)
+// Timeline event component
 function TimelineEventComponent({
   event,
   onEventClick,
@@ -98,26 +221,25 @@ function TimelineEventComponent({
 }: {
   event: Event;
   onEventClick: (e: Event) => void;
-  groupInfo?: { index: number; total: number; maxConcurrent: number };
+  groupInfo?: { index: number; total: number; maxConcurrent: number }
 }) {
-  const startHour = parseTime(event.startTime || "");
-  const endHour = parseTime(event.endTime || "");
+  const startHour = parseTime(event.startTime);
+  // Support midnight-spanning events
+  let endHour = parseTime(event.endTime);
+  if (event.isMultiDay && endHour < startHour) endHour += 24;
+
   const duration = endHour - startHour;
   const top = startHour * HOUR_BLOCK_HEIGHT;
-  const actualHeight = duration * HOUR_BLOCK_HEIGHT;
-  const minHeight = 50;
-  const height = Math.max(actualHeight, minHeight);
+  const height = Math.max(duration * HOUR_BLOCK_HEIGHT, 38);
   const isShortEvent = duration <= 0.5;
 
   // Overlap positioning and sizing
-  let leftOffset = 56; // px
+  let left = 56;
   let width = "calc(100% - 64px)";
   if (groupInfo) {
     const maxC = groupInfo.maxConcurrent || groupInfo.total;
-    // Use px for left, calc for width; avoids CSS bugs
-    const eventWidth = `calc((100% - 64px) / ${maxC} - 2px)`;
-    leftOffset = 56 + groupInfo.index * (320 / maxC); // 320px fits typical mobile width
-    width = eventWidth;
+    width = `calc((100% - 64px) / ${maxC} - 2px)`;
+    left = 56 + groupInfo.index * (320 / maxC);
   }
 
   return (
@@ -126,7 +248,7 @@ function TimelineEventComponent({
       style={{
         top: `${top}px`,
         height: `${height}px`,
-        left: groupInfo ? `${leftOffset}px` : "56px",
+        left: groupInfo ? `${left}px` : "56px",
         width: groupInfo ? width : "calc(100% - 64px)",
         right: groupInfo ? "auto" : "8px"
       }}
@@ -136,10 +258,10 @@ function TimelineEventComponent({
       <div
         className="h-full rounded-lg border-l-4 shadow-sm hover:shadow-lg transition-all duration-200 overflow-visible relative bg-opacity-90"
         style={{
-          backgroundColor: `${event.color}20`,
+          backgroundColor: `${event.color}22`,
           borderLeftColor: event.color,
           padding: isShortEvent ? "4px 6px" : "8px 8px",
-          border: `1px solid ${event.color}40`
+          border: `1px solid ${event.color}33`
         }}
       >
         {event.isMultiDay && (
@@ -147,59 +269,40 @@ function TimelineEventComponent({
             📅
           </div>
         )}
-
-        {isShortEvent ? (
-          <div className="flex flex-col justify-center h-full min-h-0">
-            <div
-              className="font-semibold text-xs leading-tight truncate"
-              style={{ color: event.color }}
-              title={event.title}
-            >
-              {event.title}
-            </div>
-            <div className="text-xs text-gray-400 leading-tight mt-0.5">
-              {event.startTime}-{event.endTime}
-            </div>
+        <div className="flex flex-col">
+          <div
+            className="font-semibold text-sm leading-tight truncate"
+            style={{ color: event.color }}
+            title={event.title}
+          >
+            {event.title.length > 20 ? `${event.title.substring(0, 20)}...` : event.title}
           </div>
-        ) : (
-          <div className="flex flex-col h-full">
-            <div
-              className="font-semibold text-sm leading-tight"
-              style={{ color: event.color }}
-              title={event.title}
-            >
-              {event.title.length > 20 ? `${event.title.substring(0, 20)}...` : event.title}
-            </div>
-            <div className="text-xs text-gray-400 mt-1">
-              {event.startTime} - {event.endTime}
-            </div>
-            {height > 80 && event.description && (
-              <div className="text-xs text-gray-500 mt-2 leading-relaxed">
-                {event.description.length > 50
-                  ? `${event.description.substring(0, 50)}...`
-                  : event.description}
-              </div>
-            )}
+          <div className="text-xs text-gray-400">
+            {event.startTime} - {event.endTime}
           </div>
-        )}
-
-        {/* Overlap indicator */}
+          {height > 70 && event.description && (
+            <div className="text-xs text-gray-500 mt-2 leading-relaxed">
+              {event.description.length > 50
+                ? `${event.description.substring(0, 50)}...`
+                : event.description}
+            </div>
+          )}
+        </div>
         {groupInfo && groupInfo.total > 1 && (
           <div className="absolute -top-1 -left-1 bg-yellow-500 text-black text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
             {groupInfo.total}
           </div>
         )}
-
         <div className="absolute inset-0 bg-black bg-opacity-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg" />
       </div>
     </div>
   );
 }
 
-// Current time indicator
-function CurrentTimeIndicator({ currentHour, currentMinute }: { currentHour: number; currentMinute: number }) {
-  const currentTimeInHours = currentHour + currentMinute / 60;
-  const top = currentTimeInHours * HOUR_BLOCK_HEIGHT;
+// Red "Now" indicator
+function CurrentTimeIndicator({ currentHour, currentMinute }: { currentHour: number, currentMinute: number }) {
+  const now = currentHour + currentMinute / 60;
+  const top = now * HOUR_BLOCK_HEIGHT;
   return (
     <>
       <div
@@ -212,7 +315,7 @@ function CurrentTimeIndicator({ currentHour, currentMinute }: { currentHour: num
         <div className="flex-1 h-0.5 bg-red-500 mr-2" />
       </div>
       <div
-        className="absolute left-0 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded-md shadow-lg font-medium"
+        className="absolute left-0 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded-md shadow-lg font-medium select-none"
         style={{
           top: `${top - 12}px`,
           transform: "translateX(-2px)"
@@ -226,30 +329,15 @@ function CurrentTimeIndicator({ currentHour, currentMinute }: { currentHour: num
   );
 }
 
-// --- Main Component (Timeline) ---
 export default function Timeline() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [viewMode, setViewMode] = useState("all"); // 'all', 'no-conflicts'
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
+    setEvents(sampleEvents);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    // Simulate loading
-    setTimeout(() => {
-      setEvents(sampleEvents);
-      setLoading(false);
-    }, 500);
   }, []);
 
   const handleEventClick = (event: Event) => {
@@ -257,18 +345,15 @@ export default function Timeline() {
     setTimeout(() => setSelectedEvent(null), 4000);
   };
 
+  // Grouping
+  const overlappingGroups = groupOverlappingEvents(events);
+
+  // Scroll to now
   const scrollToCurrentTime = () => {
     const currentHour = currentTime.getHours();
     const element = document.querySelector(`[data-hour="${currentHour}"]`);
-    if (element) {
-      // Prefer scrollIntoView if available (SSR safe)
-      (element as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (element) (element as HTMLElement).scrollIntoView({ behavior: "smooth", block: "center" });
   };
-
-  // Overlapping event groups
-  const overlappingGroups = groupOverlappingEvents(events);
-  const conflictCount = overlappingGroups.filter(group => group.length > 1).length;
 
   return (
     <div className="w-full max-w-md mx-auto h-screen bg-gray-900 text-gray-300 overflow-hidden relative">
@@ -277,50 +362,14 @@ export default function Timeline() {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h1 className="text-lg font-semibold text-white">
-              {currentTime.toLocaleDateString('en-US', {
-                weekday: 'long', month: 'short', day: 'numeric'
-              })}
+              {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </h1>
-            <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
-              <span>{events.filter(e => !e.isAllDay).length} timed</span>
-              <span>{events.filter(e => e.isAllDay).length} all-day</span>
-              {conflictCount > 0 && (
-                <span className="text-red-400 font-medium">
-                  ⚠️ {conflictCount} conflicts
-                </span>
-              )}
-            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={scrollToCurrentTime}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium text-white transition-colors"
-            >
-              Now
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-2 text-xs">
           <button
-            onClick={() => setViewMode("all")}
-            className={`px-3 py-1 rounded-full transition-colors ${
-              viewMode === "all"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-            }`}
+            onClick={scrollToCurrentTime}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium text-white transition-colors"
           >
-            All Events
-          </button>
-          <button
-            onClick={() => setViewMode("no-conflicts")}
-            className={`px-3 py-1 rounded-full transition-colors ${
-              viewMode === "no-conflicts"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-            }`}
-          >
-            Hide Conflicts
+            Now
           </button>
         </div>
       </div>
@@ -328,7 +377,7 @@ export default function Timeline() {
       {/* All-day events */}
       <AllDayEventsSection events={events} onEventClick={handleEventClick} />
 
-      {/* Selected event popup */}
+      {/* Popup */}
       {selectedEvent && (
         <div className="absolute top-32 left-4 right-4 z-50 bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-2xl">
           <div className="flex items-center justify-between mb-2">
@@ -363,13 +412,10 @@ export default function Timeline() {
         </div>
       )}
 
-      {/* Timeline container */}
+      {/* Timeline */}
       <div className="h-full overflow-y-auto">
-        <div
-          className="relative w-full border-l border-gray-700"
-          style={{ height: HOURS_IN_DAY * HOUR_BLOCK_HEIGHT }}
-        >
-          {/* Hour grid */}
+        <div className="relative w-full border-l border-gray-700" style={{ height: HOURS_IN_DAY * HOUR_BLOCK_HEIGHT }}>
+          {/* Grid hours */}
           {Array.from({ length: HOURS_IN_DAY }).map((_, hour) => (
             <div
               key={hour}
@@ -381,108 +427,63 @@ export default function Timeline() {
                 {hour === 0
                   ? "12 AM"
                   : hour < 12
-                  ? `${hour} AM`
-                  : hour === 12
-                  ? "12 PM"
-                  : `${hour - 12} PM`}
+                    ? `${hour} AM`
+                    : hour === 12
+                      ? "12 PM"
+                      : `${hour - 12} PM`}
               </div>
               <div className="border-l border-gray-600 flex-1 ml-14 h-full relative">
-                <div
-                  className="absolute left-0 w-4 border-t border-gray-700"
-                  style={{ top: `${HOUR_BLOCK_HEIGHT / 2}px` }}
-                />
-                {/* Quarter hour markers */}
-                <div
-                  className="absolute left-0 w-2 border-t border-gray-800"
-                  style={{ top: `${HOUR_BLOCK_HEIGHT / 4}px` }}
-                />
-                <div
-                  className="absolute left-0 w-2 border-t border-gray-800"
-                  style={{ top: `${(3 * HOUR_BLOCK_HEIGHT) / 4}px` }}
-                />
+                <div className="absolute left-0 w-4 border-t border-gray-700" style={{ top: `${HOUR_BLOCK_HEIGHT / 2}px` }} />
+                <div className="absolute left-0 w-2 border-t border-gray-800" style={{ top: `${HOUR_BLOCK_HEIGHT / 4}px` }} />
+                <div className="absolute left-0 w-2 border-t border-gray-800" style={{ top: `${(3 * HOUR_BLOCK_HEIGHT) / 4}px` }} />
               </div>
             </div>
           ))}
 
-          {/* Current time indicator */}
+          {/* Now marker */}
           <CurrentTimeIndicator
             currentHour={currentTime.getHours()}
             currentMinute={currentTime.getMinutes()}
           />
 
-          {/* Loading state */}
-          {loading && (
-            <div className="absolute top-20 left-16 right-4 bg-gray-800 bg-opacity-90 rounded-lg p-4 text-center">
-              <div className="text-gray-400">
-                <div className="w-6 h-6 bg-blue-600 rounded-full mx-auto mb-2 animate-spin border-2 border-transparent border-t-white"></div>
-                Loading all event types...
-              </div>
-            </div>
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="absolute top-20 left-16 right-4 bg-red-900 bg-opacity-20 border border-red-800 rounded-lg p-4">
-              <div className="text-red-400 font-medium text-sm">⚠️ {error}</div>
-            </div>
-          )}
-
-          {/* Render overlapping event groups */}
-          {!loading &&
-            !error &&
-            overlappingGroups.map((group, groupIndex) => {
-              if (viewMode === "no-conflicts" && group.length > 1) return null;
-              if (group.length === 1) {
-                // Single event - render normally
-                return (
-                  <TimelineEventComponent
-                    key={group[0].id}
-                    event={group[0]}
-                    onEventClick={handleEventClick}
-                  />
-                );
-              } else {
-                // Multiple overlapping events
-                const maxConcurrent = Math.max(
-                  ...group.map(event => {
-                    const start = parseTime(event.startTime || "");
-                    const end = parseTime(event.endTime || "");
-                    return group.filter(otherEvent => {
-                      const otherStart = parseTime(
-                        otherEvent.startTime || ""
-                      );
-                      const otherEnd = parseTime(otherEvent.endTime || "");
-                      return start < otherEnd && otherStart < end;
-                    }).length;
-                  })
-                );
-                return group.map((event, eventIndex) => (
-                  <TimelineEventComponent
-                    key={event.id}
-                    event={event}
-                    onEventClick={handleEventClick}
-                    groupInfo={{
-                      index: eventIndex,
-                      total: group.length,
-                      maxConcurrent: maxConcurrent
-                    }}
-                  />
-                ));
-              }
-            })}
-
-          {/* Empty state */}
-          {!loading && !error && events.length === 0 && (
-            <div className="absolute top-20 left-16 right-4 text-center text-gray-500">
-              <div className="text-4xl mb-4">📅</div>
-              <div className="text-lg font-medium mb-2">No events today</div>
-              <div className="text-sm">Your schedule is completely free!</div>
-            </div>
-          )}
+          {/* Render overlapping groups, side-by-side */}
+          {overlappingGroups.map((group, idx) => {
+            if (group.length === 1) {
+              return (
+                <TimelineEventComponent
+                  key={group[0].id}
+                  event={group[0]}
+                  onEventClick={handleEventClick}
+                />
+              );
+            } else {
+              const maxConcurrent = Math.max(
+                ...group.map(event => {
+                  const start = parseTime(event.startTime);
+                  const end = parseTime(event.endTime);
+                  return group.filter(otherEvent => {
+                    const otherStart = parseTime(otherEvent.startTime);
+                    const otherEnd = parseTime(otherEvent.endTime);
+                    return start < otherEnd && otherStart < end;
+                  }).length;
+                })
+              );
+              return group.map((event, eventIndex) => (
+                <TimelineEventComponent
+                  key={event.id}
+                  event={event}
+                  onEventClick={handleEventClick}
+                  groupInfo={{
+                    index: eventIndex,
+                    total: group.length,
+                    maxConcurrent
+                  }}
+                />
+              ));
+            }
+          })}
         </div>
       </div>
     </div>
   );
-}
-
-// -- End of file --
+          }
