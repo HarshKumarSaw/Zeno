@@ -16,11 +16,11 @@ export default function TimelineEventComponent({ event }: Props) {
     );
   }
 
-  const start = new Date(event.startTime);
-  const end = new Date(event.endTime);
+  const start = new Date(event.start);
+  const end = new Date(event.end);
 
   const startHour = start.getHours() + start.getMinutes() / 60;
-  const durationInMinutes = getDurationInMinutes(event.startTime, event.endTime);
+  const durationInMinutes = getDurationInMinutes(event.start, event.end);
   const top = (startHour * 96); // 96px = 1 hour (h-24)
   const height = (durationInMinutes / 60) * 96;
 
