@@ -2,6 +2,13 @@
 import React from "react";
 import { TimelineEvent } from "../types/event";
 import { getDurationInMinutes, getHourFractionFromISO } from "../utils/time";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+// Extend plugins ONCE, at the top level (outside the component).
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const COLOR_MAP: Record<string, string> = {
   "1": "#EF4444",
@@ -15,33 +22,23 @@ type TimelineEventProps = {
   event: TimelineEvent;
 };
 
-export default function TimelineEventComponent({ event }: TimelineEventProps) {
-  // Timezone for display and grid placement, always Asia/Kolkata for your use-case
-  const TIMEZONE = "Asia/Kolkata";
+const HOUR_BLOCK_HEIGHT = 96;
+const TIMEZONE = "Asia/Kolkata";
 
-  // Use new utils for hour and duration
+export default function TimelineEventComponent({ event }: TimelineEventProps) {
+  // Compute position and duration using your timezone-safe utils
   const startHour = getHourFractionFromISO(event.start, TIMEZONE);
   const durationMin = getDurationInMinutes(event.start, event.end);
-  const top = startHour * 96;
-  const height = (durationMin / 60) * 96;
+  const top = startHour * HOUR_BLOCK_HEIGHT;
+  const height = (durationMin / 60) * HOUR_BLOCK_HEIGHT;
 
   // Color
   const bgColor =
     (event.colorId && COLOR_MAP[event.colorId]) || DEFAULT_COLOR;
 
-  // Display strings (for user, show them in IST too)
-  // You can customize this as needed
-  // For robust formatting use dayjs for display as well
-  import dayjs from 'dayjs'; // Add at top
-  import timezone from 'dayjs-plugin-timezone'; // Add at top if not present
-  dayjs.extend(timezone);
-
-  const displayStart = dayjs(event.start)
-    .tz(TIMEZONE)
-    .format("HH:mm");
-  const displayEnd = dayjs(event.end)
-    .tz(TIMEZONE)
-    .format("HH:mm");
+  // Display time strings in IST for user
+  const displayStart = dayjs.tz(event.start, TIMEZONE).format("HH:mm");
+  const displayEnd   = dayjs.tz(event.end, TIMEZONE).format("HH:mm");
 
   return (
     <article
