@@ -1,44 +1,47 @@
 // /components/TimelineEvents.tsx
 import React from "react";
 import { TimelineEvent } from "../types/event";
+import { getDurationInMinutes, getHourFractionFromISO } from "../utils/time";
 
-// Define color codes by category/colorId
 const COLOR_MAP: Record<string, string> = {
-  "1": "#EF4444", // Red – Personal
-  "2": "#F59E42", // Orange – Work
-  "3": "#38BDF8", // Blue – Focus
-  "4": "#22C55E", // Green – Wellness
+  "1": "#EF4444",
+  "2": "#F59E42",
+  "3": "#38BDF8",
+  "4": "#22C55E",
 };
-
-const DEFAULT_COLOR = "#6366F1"; // Indigo – fallback
+const DEFAULT_COLOR = "#6366F1";
 
 type TimelineEventProps = {
   event: TimelineEvent;
 };
 
 export default function TimelineEventComponent({ event }: TimelineEventProps) {
-  const startDate = new Date(event.start);
-  const endDate = new Date(event.end);
+  // Timezone for display and grid placement, always Asia/Kolkata for your use-case
+  const TIMEZONE = "Asia/Kolkata";
 
-  // Positioning & dimensions
-  const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-  const durationMin = (endDate.getTime() - startDate.getTime()) / 60000;
-  const top = startHour * 96; // 96px = per hour block height
+  // Use new utils for hour and duration
+  const startHour = getHourFractionFromISO(event.start, TIMEZONE);
+  const durationMin = getDurationInMinutes(event.start, event.end);
+  const top = startHour * 96;
   const height = (durationMin / 60) * 96;
 
   // Color
   const bgColor =
     (event.colorId && COLOR_MAP[event.colorId]) || DEFAULT_COLOR;
 
-  // Display time strings
-  const displayStart = startDate.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const displayEnd = endDate.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // Display strings (for user, show them in IST too)
+  // You can customize this as needed
+  // For robust formatting use dayjs for display as well
+  import dayjs from 'dayjs'; // Add at top
+  import timezone from 'dayjs-plugin-timezone'; // Add at top if not present
+  dayjs.extend(timezone);
+
+  const displayStart = dayjs(event.start)
+    .tz(TIMEZONE)
+    .format("HH:mm");
+  const displayEnd = dayjs(event.end)
+    .tz(TIMEZONE)
+    .format("HH:mm");
 
   return (
     <article
