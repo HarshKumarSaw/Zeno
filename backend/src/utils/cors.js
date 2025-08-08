@@ -1,4 +1,4 @@
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "*"; // "*" for dev, env var for prod
+const allowedOrigin = process.env.ALLOWED_ORIGIN; // "*" for dev, env var for prod
 
 export function withCorsHeaders(resp) {
   resp.headers.set("Access-Control-Allow-Origin", allowedOrigin);
