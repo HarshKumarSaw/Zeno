@@ -13,7 +13,7 @@ export default function Timeline() {
           'https://zeno-backend.harshsaw01.workers.dev/api/timelineEvents?user=1&date=2025-08-09'
         );
         const data = await res.json();
-        setEvents(data.events);
+        setEvents(data); // <-- fix is here!
       } catch (err) {
         console.error('Error fetching events:', err);
       }
@@ -24,14 +24,11 @@ export default function Timeline() {
 
   return (
     <div className="relative h-[2304px] bg-black">
-      {/* Hour markers */}
       {Array.from({ length: 24 }).map((_, hour) => (
         <div key={hour} className="h-24 border-t border-gray-300 relative">
           <span className="absolute -left-12 text-xs text-gray-500">{`${hour.toString().padStart(2, '0')}:00`}</span>
         </div>
       ))}
-
-      {/* Timeline Events */}
       {events.map(event => (
         <TimelineEventComponent key={event.id} event={event} />
       ))}
