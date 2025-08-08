@@ -5,7 +5,7 @@ import TimelineEventComponent from "./TimelineEvents";
 import { TimelineEvent } from "../types/event";
 
 const HOURS_IN_DAY = 24;
-const HOUR_BLOCK_HEIGHT = 96; // 24px * 4 for height per hour block, adjust as needed
+const HOUR_BLOCK_HEIGHT = 96; // Height per hour row in pixels
 
 export default function Timeline() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -33,14 +33,15 @@ export default function Timeline() {
 
   return (
     <main className="w-full max-w-md mx-auto h-screen bg-black text-gray-300 overflow-y-auto relative select-none">
-      {/* Timeline container with fixed height for scroll */}
       <div
         className="relative w-full border border-gray-800"
-        style={{ height: HOURS_IN_DAY * HOUR_BLOCK_HEIGHT }}
+        style={{
+          height: HOURS_IN_DAY * HOUR_BLOCK_HEIGHT,
+        }}
         aria-label="24-hour timeline"
         role="list"
       >
-        {/* Render hour rows */}
+        {/* Hour blocks */}
         {Array.from({ length: HOURS_IN_DAY }).map((_, hour) => (
           <div
             key={hour}
@@ -58,7 +59,7 @@ export default function Timeline() {
           </div>
         ))}
 
-        {/* Loading and Error messages */}
+        {/* Loading and error messages */}
         {loading && (
           <div className="absolute top-5 left-20 text-gray-400 font-medium select-text">
             Loading events...
@@ -70,15 +71,11 @@ export default function Timeline() {
           </div>
         )}
 
-        {/* Render events positioned absolutely */}
+        {/* Events rendering (without containerHeight) */}
         {!loading &&
           !error &&
           events.map((event) => (
-            <TimelineEventComponent
-              key={event.id}
-              event={event}
-              containerHeight={HOURS_IN_DAY * HOUR_BLOCK_HEIGHT}
-            />
+            <TimelineEventComponent key={event.id} event={event} />
           ))}
       </div>
     </main>
