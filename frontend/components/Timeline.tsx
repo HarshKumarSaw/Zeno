@@ -1,4 +1,7 @@
 // /components/Timeline.tsx
+
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import TimelineEventComponent from './TimelineEvents';
 import { TimelineEvent } from '../types/event';
