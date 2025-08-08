@@ -51,4 +51,9 @@ export default function TimelineEventComponent({ event }: TimelineEventProps) {
       {!event.allDay && (
         <div style={{ fontSize: 12, opacity: 0.85 }}>
           {displayStart} – {displayEnd}
-          
+        </div>
+      )}
+      {/* Optional: other fields (like location or attendees) */}
+    </div>
+  );
+}
