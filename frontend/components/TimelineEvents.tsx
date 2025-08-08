@@ -1,27 +1,27 @@
 import React from 'react';
 import { TimelineEvent } from '../types/event';
 
-interface Props {
-  event: TimelineEvent;
-}
-
-// Map colorId to a background color
-const colorMap: { [k: string]: string } = {
+// Map colorId to event background color
+const colorMap: { [id: string]: string } = {
   "1": "#EF4444", // red
   "2": "#F59E42", // orange
   "3": "#38BDF8", // blue
   "4": "#22C55E", // green
-  // Add more colors if needed
 };
+const defaultColor = '#6366F1';
+
+interface Props {
+  event: TimelineEvent;
+}
 
 export default function TimelineEventComponent({ event }: Props) {
   const start = new Date(event.start);
   const end = new Date(event.end);
   const startHour = start.getHours() + start.getMinutes() / 60;
-  const durationInMinutes = (end.getTime() - start.getTime()) / 60000;
+  const duration = (end.getTime() - start.getTime()) / 60000; // in minutes
   const top = startHour * 96;
-  const height = (durationInMinutes / 60) * 96;
-  const bgColor = colorMap[event.colorId] || '#6366F1';
+  const height = (duration / 60) * 96;
+  const bgColor = event.colorId ? (colorMap[event.colorId] || defaultColor) : defaultColor;
 
   return (
     <div
