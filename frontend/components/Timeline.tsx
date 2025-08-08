@@ -1,52 +1,31 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import TimelineEventComponent from './TimelineEvents';
-import { TimelineEvent } from '../types/event';
 
 export default function Timeline() {
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
         const res = await fetch(
           'https://zeno-backend.harshsaw01.workers.dev/api/timelineEvents?user=1&date=2025-08-09'
         );
-        const data = await res.json();
-        setEvents(data); // Using the array directly
+        const jsonData = await res.json();
+        setData(jsonData);
       } catch (err) {
-        console.error('Error fetching events:', err);
+        setData({ error: String(err) });
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, []);
 
   return (
-    <div className="relative h-[2304px] bg-black">
-      {/* Debug display (optional, can be removed after troubleshooting) */}
-      <pre style={{
-        color: 'lime',
-        background: 'rgba(0,0,0,0.8)',
-        padding: 8,
-        maxHeight: 200,
-        overflowY: 'auto',
-        fontSize: 10,
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-      }}>
-        {JSON.stringify(events, null, 2)}
+    <div style={{ color: "lime", background: "#111", padding: 16 }}>
+      <h3>API Response Test:</h3>
+      <pre style={{ background: "#222", color: "lime", padding: 16 }}>
+        {JSON.stringify(data, null, 2)}
       </pre>
-
-      {Array.from({ length: 24 }).map((_, hour) => (
-        <div key={hour} className="h-24 border-t border-gray-300 relative">
-          <span className="absolute -left-12 text-xs text-gray-500">{`${hour.toString().padStart(2, '0')}:00`}</span>
-        </div>
-      ))}
-      {events.map(event => (
-        <TimelineEventComponent key={event.id} event={event} />
-      ))}
     </div>
   );
 }
