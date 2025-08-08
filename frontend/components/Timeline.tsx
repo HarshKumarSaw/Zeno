@@ -1,37 +1,40 @@
 // /components/Timeline.tsx
-
-"use client";
-import React from 'react';
-import TimelineEvents from './TimelineEvents';
-
-// Generate the hour labels (00:00 to 23:00)
-const hours = Array.from({ length: 24 }, (_, i) =>
-  `${i.toString().padStart(2, '0')}:00`
-);
+import React, { useEffect, useState } from 'react';
+import TimelineEventComponent from './TimelineEvent';
+import { TimelineEvent } from '../types/event';
 
 export default function Timeline() {
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch(
+          'https://zeno-backend.harshsaw01.workers.dev/api/timelineEvents?user=1&date=2025-08-09'
+        );
+        const data = await res.json();
+        setEvents(data.events); // Assuming the API returns { events: [...] }
+      } catch (err) {
+        console.error('Error fetching events:', err);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
   return (
-    <div className="h-screen overflow-y-scroll bg-white dark:bg-black">
-      <div className="relative ml-14 border-l border-gray-300 dark:border-gray-700">
-        {/* Timeline hour grid */}
-        {hours.map((hour) => (
-          <div
-            key={hour}
-            className="h-24 relative"
-            role="presentation"
-          >
-            {/* Hour label */}
-            <div
-              className="absolute -left-14 w-12 pr-2 text-right text-sm text-gray-500 dark:text-gray-400"
-              aria-hidden="true"
-            >
-              {hour}
-            </div>
-            {/* Hour line */}
-            <div className="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700" />
-          </div>
-        ))}
-      </div>
+    <div className="relative h-[2304px]"> {/* 96px x 24h */}
+      {/* Hour markers */}
+      {Array.from({ length: 24 }).map((_, hour) => (
+        <div key={hour} className="h-24 border-t border-gray-300 relative">
+          <span className="absolute -left-12 text-xs text-gray-500">{`${hour.toString().padStart(2, '0')}:00`}</span>
+        </div>
+      ))}
+
+      {/* Timeline Events */}
+      {events.map(event => (
+        <TimelineEventComponent key={event.id} event={event} />
+      ))}
     </div>
   );
 }
