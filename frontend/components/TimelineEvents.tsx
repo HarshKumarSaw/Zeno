@@ -11,7 +11,7 @@ export default function TimelineEventComponent({ event }: Props) {
   if (event.allDay) {
     return (
       <div className="absolute top-0 left-16 right-4 h-8 border border-dashed bg-white text-xs px-2 py-1 rounded text-gray-700">
-        {event.summary}
+        {event.title}
       </div>
     );
   }
@@ -33,7 +33,7 @@ export default function TimelineEventComponent({ event }: Props) {
         backgroundColor: event.color,
       }}
     >
-      {event.summary}
+      {event.title}
     </div>
   );
 }
