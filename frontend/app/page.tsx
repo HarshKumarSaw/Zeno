@@ -1,4 +1,3 @@
-// /app/page.tsx
 import Timeline from '../components/Timeline';
 
 export default function HomePage() {
