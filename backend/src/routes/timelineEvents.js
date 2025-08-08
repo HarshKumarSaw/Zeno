@@ -1,7 +1,6 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
-import { withCorsHeaders } from "../utils/cors.js"; // Centralized CORS
+import { withCorsHeaders } from "../utils/cors.js";
 
-// Returns UTC ISO strings for full IST day
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -9,15 +8,21 @@ function getISTDayRange(dateStr) {
 }
 
 export async function onRequestGet(context) {
+  const { env } = context;
+  const allowedOrigin = env.ALLOWED_ORIGIN || "*";
+
   const url = new URL(context.request.url);
   const userId = url.searchParams.get("user");
   const date = url.searchParams.get("date");
 
   if (!userId || !date) {
-    return withCorsHeaders(new Response(JSON.stringify({ error: "Missing user or date param" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    }));
+    return withCorsHeaders(
+      new Response(JSON.stringify({ error: "Missing user or date param" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      }),
+      allowedOrigin
+    );
   }
 
   try {
@@ -52,14 +57,12 @@ export async function onRequestGet(context) {
       const isAllDay = !!ev.start.date;
       const start = isAllDay ? ev.start.date : ev.start.dateTime;
       const end = isAllDay ? ev.end.date : ev.end.dateTime;
-
       const durationDays = isAllDay
         ? (new Date(ev.end.date) - new Date(ev.start.date)) / (1000 * 60 * 60 * 24)
         : null;
       const durationHours = !isAllDay
         ? (new Date(end) - new Date(start)) / (1000 * 60 * 60)
         : null;
-
       return {
         id: ev.id,
         recurringEventId: ev.recurringEventId || null,
@@ -82,21 +85,28 @@ export async function onRequestGet(context) {
       };
     });
 
-    return withCorsHeaders(new Response(JSON.stringify(events), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }));
+    return withCorsHeaders(
+      new Response(JSON.stringify(events), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      }),
+      allowedOrigin
+    );
 
   } catch (err) {
     console.error("Fetch events error", { userId, date, err });
-    return withCorsHeaders(new Response(JSON.stringify({ error: "Failed to fetch events" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    }));
+    return withCorsHeaders(
+      new Response(JSON.stringify({ error: "Failed to fetch events" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }),
+      allowedOrigin
+    );
   }
 }
 
-// --- ADD THIS OPTIONS HANDLER FOR CORS PREFLIGHT ---
+// CORS preflight (OPTIONS) handler
 export async function onRequestOptions(context) {
-  return withCorsHeaders(new Response(null, { status: 204 }));
+  const allowedOrigin = context.env.ALLOWED_ORIGIN || "*";
+  return withCorsHeaders(new Response(null, { status: 204 }), allowedOrigin);
 }
