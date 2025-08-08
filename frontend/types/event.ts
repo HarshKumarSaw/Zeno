@@ -4,7 +4,6 @@ export interface TimelineEvent {
   title: string;
   start: string;
   end: string;
-  summary: string;
   allDay?: boolean;
   timeZone?: string;
   startUtc?: string;
