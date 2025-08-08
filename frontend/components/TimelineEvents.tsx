@@ -1,7 +1,7 @@
 import React from 'react';
 import { TimelineEvent } from '../types/event';
 
-// Map colorId to event background color
+// Map colorId to a background color
 const colorMap: { [id: string]: string } = {
   "1": "#EF4444", // red
   "2": "#F59E42", // orange
