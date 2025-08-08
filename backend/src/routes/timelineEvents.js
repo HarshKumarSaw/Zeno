@@ -1,6 +1,6 @@
 import { getValidAccessToken } from "../utils/refreshGoogleToken.js";
+import { withCorsHeaders } from "../utils/cors.js"; // Step 1: import CORS utility
 
-// Returns UTC ISO strings for full IST day
 function getISTDayRange(dateStr) {
   const timeMin = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
   const timeMax = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
@@ -13,10 +13,10 @@ export async function onRequestGet(context) {
   const date = url.searchParams.get("date");
 
   if (!userId || !date) {
-    return new Response(JSON.stringify({ error: "Missing user or date param" }), {
+    return withCorsHeaders(new Response(JSON.stringify({ error: "Missing user or date param" }), {
       status: 400,
       headers: { "Content-Type": "application/json" }
-    });
+    }));
   }
 
   try {
@@ -56,7 +56,6 @@ export async function onRequestGet(context) {
         ? (new Date(ev.end.date) - new Date(ev.start.date)) / (1000 * 60 * 60 * 24)
         : null;
 
-      // ✅ NEW: Duration in hours for timed events
       const durationHours = !isAllDay
         ? (new Date(end) - new Date(start)) / (1000 * 60 * 60)
         : null;
@@ -78,21 +77,23 @@ export async function onRequestGet(context) {
         endExclusive: isAllDay ? ev.end.date : undefined,
         attendees: (ev.attendees || []).map(a => a.email),
         durationDays,
-        durationHours, // ✅ Now included for timed events!
+        durationHours,
         pinnedTop: isAllDay
       };
     });
 
-    return new Response(JSON.stringify(events), {
+    // SUCCESS: wrap response in CORS
+    return withCorsHeaders(new Response(JSON.stringify(events), {
       status: 200,
       headers: { "Content-Type": "application/json" }
-    });
+    }));
 
   } catch (err) {
     console.error("Fetch events error", { userId, date, err });
-    return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
+    // ERROR: wrap response in CORS
+    return withCorsHeaders(new Response(JSON.stringify({ error: "Failed to fetch events" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
-    });
+    }));
   }
 }
