@@ -1,29 +1,23 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import TimelineEventComponent from './TimelineEvents';
 import { TimelineEvent } from '../types/event';
 
 export default function Timeline() {
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch(
-          'https://zeno-backend.harshsaw01.workers.dev/api/timelineEvents?user=1&date=2025-08-09'
-        );
-        const data = await res.json();
-        setEvents(data);  // <-- THIS MUST BE data, NOT data.events
-      } catch (err) {
-        console.error('Error fetching events:', err);
-      }
-    };
-    fetchEvents();
-  }, []);
+  const [events, setEvents] = useState<TimelineEvent[]>([
+    {
+      id: 'hardcoded-1',
+      title: 'Sample Event',
+      start: '2025-08-09T14:00:00+05:30',
+      end: '2025-08-09T16:00:00+05:30',
+      colorId: '4',
+      allDay: false
+    }
+  ]);
 
   return (
     <div className="relative h-[2304px] bg-black">
-      {/* Debug output: remove after working */}
+      {/* Debug output */}
       <pre style={{
         color: 'lime',
         background: 'rgba(0,0,0,0.8)',
