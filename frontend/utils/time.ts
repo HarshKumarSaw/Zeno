@@ -1,9 +1,9 @@
 // /utils/time.ts
 import dayjs from "dayjs";
-import utc from "dayjs-plugin-utc";
-import timezone from "dayjs-plugin-timezone";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
-// initialize plugins ONCE in your project
+// Initialize plugins ONCE in your project/file (top level)
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
