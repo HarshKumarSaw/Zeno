@@ -1,9 +1,17 @@
 // /utils/time.ts
+import dayjs from "dayjs";
+import utc from "dayjs-plugin-utc";
+import timezone from "dayjs-plugin-timezone";
+
+// initialize plugins ONCE in your project
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export function getDurationInMinutes(start: string, end: string): number {
-  return (new Date(end).getTime() - new Date(start).getTime()) / 60000;
+  return dayjs(end).diff(dayjs(start), "minute");
 }
 
-export function getHourFromISO(iso: string): number {
-  return new Date(iso).getHours();
+export function getHourFractionFromISO(iso: string, tz: string = "Asia/Kolkata") {
+  const d = dayjs.tz(iso, tz);
+  return d.hour() + d.minute() / 60;
 }
