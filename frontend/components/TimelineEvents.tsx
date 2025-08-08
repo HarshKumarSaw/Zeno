@@ -22,18 +22,24 @@ type TimelineEventProps = {
 };
 
 export default function TimelineEventComponent({ event }: TimelineEventProps) {
-  // Use UTC fields for timezone-safe math and display
+  // Always use UTC fields and convert to Asia/Kolkata for math and display!
   const start = dayjs.tz(event.startUtc, TIMEZONE);
   const end = dayjs.tz(event.endUtc, TIMEZONE);
+
+  // Debug logging
+  console.log({
+    eventStartUtc: event.startUtc,
+    asIST: start.format("YYYY-MM-DD HH:mm"),
+    startHour: start.hour(),
+    duration: end.diff(start, "minute")
+  });
 
   const startHour = start.hour() + start.minute() / 60;
   const durationMin = end.diff(start, "minute");
   const top = startHour * HOUR_BLOCK_HEIGHT;
   const height = (durationMin / 60) * HOUR_BLOCK_HEIGHT;
 
-  const bgColor =
-    (event.colorId && COLOR_MAP[event.colorId]) || DEFAULT_COLOR;
-
+  const bgColor = (event.colorId && COLOR_MAP[event.colorId]) || DEFAULT_COLOR;
   const displayStart = start.format("HH:mm");
   const displayEnd = end.format("HH:mm");
 
